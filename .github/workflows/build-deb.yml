@@ -34,9 +34,15 @@ jobs:
         run: |
           sudo checkinstall --pkgname=$PKG_NAME --pkgversion=$PKG_VERSION --pkgrelease=$PKG_RELEASE --default --install=no
 
+      - name: Rename .deb Package
+        run: |
+          DEB_FILE=$(ls *.deb | head -n 1)
+          NEW_NAME="${PKG_NAME}-${PKG_VERSION}-${PKG_RELEASE}_amd64.deb"
+          mv "$DEB_FILE" "$NEW_NAME"
+
       - name: Upload .deb Artifact
         uses: actions/upload-artifact@v4
         with:
           name: deb-package
-          path: '*.deb'
+          path: "${{ env.PKG_NAME }}-${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_amd64.deb"
 
