@@ -9,12 +9,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    container:
+      image: debian:bullseye-slim
     env:
       PKG_NAME: simplefuckingtimer
       PKG_RELEASE: 1
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -24,15 +23,15 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          sudo apt update
-          sudo apt install -y build-essential libsdl2-dev libsdl2-ttf-dev libx11-dev checkinstall
+          apt-get update
+          apt-get install -y build-essential libsdl2-dev libsdl2-ttf-dev libx11-dev checkinstall
 
       - name: Build the Application
         run: make
 
       - name: Build Debian Package with checkinstall
         run: |
-          sudo checkinstall --pkgname=$PKG_NAME --pkgversion=$PKG_VERSION --pkgrelease=$PKG_RELEASE --default --install=no
+          checkinstall --pkgname=$PKG_NAME --pkgversion=$PKG_VERSION --pkgrelease=$PKG_RELEASE --default --install=no
 
       - name: Rename .deb Package
         run: |
