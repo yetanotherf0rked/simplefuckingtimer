@@ -2,16 +2,15 @@
 
 <div align="center">
   <img src="assets/sft-logo-256.png" alt="SimpleFuckingTimer Logo" width="128" />
-</div>
 
+A minimal overlay timer for speedrunning with global hotkeys on Linux.
+
+  <img src="assets/demo.gif" alt="SimpleFuckingTimer Demo" width="128" />
 
 ![Build Status](https://github.com/yetanotherf0rked/simplefuckingtimer/actions/workflows/build-deb.yml/badge.svg)
 ![Latest Release](https://img.shields.io/github/release/yetanotherf0rked/simplefuckingtimer.svg)
 
-A minimal overlay timer for speedrunning with global hotkeys on Linux.
 
-<div align="center">
-  <img src="assets/demo.gif" alt="SimpleFuckingTimer Demo" width="128" />
 </div>
 
 ## Features
