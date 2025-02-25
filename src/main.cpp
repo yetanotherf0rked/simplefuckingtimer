@@ -15,34 +15,41 @@ Timer timer;
 // Declaration for hotkeyListener.
 void hotkeyListener();
 
-// Helper function to format elapsed time.
+// New helper function to format the elapsed time.
 std::string formatTime(double seconds) {
-    int totalSec = static_cast<int>(seconds);
-    int days = totalSec / 86400;
-    int hours = (totalSec % 86400) / 3600;
-    int minutes = (totalSec % 3600) / 60;
-    double secWithFraction = seconds - (days * 86400 + hours * 3600 + minutes * 60);
-    int secInt = static_cast<int>(secWithFraction);
-    int secFrac = static_cast<int>((secWithFraction - secInt) * 100); // two decimals
-
     std::ostringstream oss;
-    if (days > 0) {
-        oss << days << "d "
+    int totalSec = static_cast<int>(seconds);
+    
+    if (seconds < 60.0) {
+        // Under 60 seconds: show seconds with decimals.
+        oss << std::fixed << std::setprecision(2) << seconds;
+    } else if (seconds < 3600.0) {
+        // Between 60 seconds and 1 hour: MM:SS.ss
+        int minutes = totalSec / 60;
+        double sec = seconds - minutes * 60;
+        oss << minutes << ":"
+            << std::setfill('0') << std::setw(2) << static_cast<int>(sec) << "."
+            << std::setfill('0') << std::setw(2) << static_cast<int>((sec - static_cast<int>(sec)) * 100);
+    } else if (seconds < 86400.0) {
+        // Between 1 hour and 1 day: HH:MM:SS.ss
+        int hours = totalSec / 3600;
+        int minutes = (totalSec % 3600) / 60;
+        double sec = seconds - hours * 3600 - minutes * 60;
+        oss << std::setfill('0') << std::setw(2) << hours << ":"
+            << std::setfill('0') << std::setw(2) << minutes << ":"
+            << std::setfill('0') << std::setw(2) << static_cast<int>(sec) << "."
+            << std::setfill('0') << std::setw(2) << static_cast<int>((sec - static_cast<int>(sec)) * 100);
+    } else {
+        // 1 day or more: DD:HH:MM:SS.ss (max days considered is 99)
+        int days = totalSec / 86400;
+        int hours = (totalSec % 86400) / 3600;
+        int minutes = (totalSec % 3600) / 60;
+        double sec = seconds - days * 86400 - hours * 3600 - minutes * 60;
+        oss << std::setfill('0') << std::setw(2) << days << ":"
             << std::setfill('0') << std::setw(2) << hours << ":"
             << std::setfill('0') << std::setw(2) << minutes << ":"
-            << std::setfill('0') << std::setw(2) << secInt << "."
-            << std::setfill('0') << std::setw(2) << secFrac;
-    } else if (hours > 0) {
-        oss << hours << ":"
-            << std::setfill('0') << std::setw(2) << minutes << ":"
-            << std::setfill('0') << std::setw(2) << secInt << "."
-            << std::setfill('0') << std::setw(2) << secFrac;
-    } else if (minutes > 0) {
-        oss << minutes << ":"
-            << std::setfill('0') << std::setw(2) << secInt << "."
-            << std::setfill('0') << std::setw(2) << secFrac;
-    } else {
-        oss << std::fixed << std::setprecision(2) << seconds;
+            << std::setfill('0') << std::setw(2) << static_cast<int>(sec) << "."
+            << std::setfill('0') << std::setw(2) << static_cast<int>((sec - static_cast<int>(sec)) * 100);
     }
     return oss.str();
 }
@@ -63,16 +70,30 @@ std::string getDefaultFontPath() {
     return "";
 }
 
+// Global variables for overlay sizing and margins.
+int overlayWidth = 0;
+int overlayHeight = 0;
+const int horizontalMargin = 10;
+const int verticalMargin = 10;
+
 void renderTimer(SDL_Renderer* renderer, TTF_Font* font, double timeValue) {
     std::string timeText = formatTime(timeValue);
+    int textW = 0, textH = 0;
+    if (TTF_SizeText(font, timeText.c_str(), &textW, &textH) != 0) {
+        std::cerr << "TTF_SizeText error: " << TTF_GetError() << "\n";
+        return;
+    }
+    
+    // Compute the destination rectangle so that text is right-aligned.
+    // The text's right edge will be at overlayWidth - horizontalMargin.
+    int dstX = overlayWidth - horizontalMargin - textW;
+    int dstY = (overlayHeight - textH) / 2; // vertically centered
+    SDL_Rect dstRect = { dstX, dstY, textW, textH };
+
     SDL_Color white = {255, 255, 255, 255};
     SDL_Surface* surface = TTF_RenderText_Blended(font, timeText.c_str(), white);
     if (!surface) return;
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-    int textW = 0, textH = 0;
-    SDL_QueryTexture(texture, NULL, NULL, &textW, &textH);
-    SDL_Rect dstRect = {100, 100, textW, textH};
 
     SDL_RenderCopy(renderer, texture, NULL, &dstRect);
 
@@ -90,6 +111,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Create an initial window (size will be adjusted below)
     SDL_Window* window = SDL_CreateWindow("SimpleFuckingTimer",
                                           SDL_WINDOWPOS_CENTERED,
                                           SDL_WINDOWPOS_CENTERED,
@@ -99,7 +121,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << "\n";
         return 1;
     }
-
     SDL_SetWindowOpacity(window, 0.5);
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -120,6 +141,17 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Determine a fixed overlay size that will fit the worst-case timer string.
+    // We'll use "99:23:59:59.99" as the maximum possible string.
+    int maxTextW = 0, maxTextH = 0;
+    std::string maxString = "99:23:59:59.99";
+    if (TTF_SizeText(font, maxString.c_str(), &maxTextW, &maxTextH) != 0) {
+        std::cerr << "TTF_SizeText error: " << TTF_GetError() << "\n";
+    }
+    overlayWidth = maxTextW + 2 * horizontalMargin;
+    overlayHeight = maxTextH + 2 * verticalMargin;
+    SDL_SetWindowSize(window, overlayWidth, overlayHeight);
+
     // Launch the hotkey listener in a separate thread.
     std::thread hotkeyThread(hotkeyListener);
 
@@ -137,7 +169,6 @@ int main(int argc, char* argv[]) {
                     break;
                 case SDL_MOUSEBUTTONDOWN:
                     if (e.button.button == SDL_BUTTON_LEFT) {
-                        // Start dragging: record the offset of the click within the window.
                         dragging = true;
                         dragOffsetX = e.button.x;
                         dragOffsetY = e.button.y;
