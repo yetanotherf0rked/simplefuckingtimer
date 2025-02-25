@@ -5,7 +5,7 @@
 
 A minimal overlay timer for speedrunning with global hotkeys on Linux.
 
-  <img src="assets/demo.gif" alt="SimpleFuckingTimer Demo" width="128" />
+  <img src="assets/demo.gif" alt="SimpleFuckingTimer Demo" width="1024" />
 
 ![Build Status](https://github.com/yetanotherf0rked/simplefuckingtimer/actions/workflows/build-deb.yml/badge.svg)
 ![Latest Release](https://img.shields.io/github/release/yetanotherf0rked/simplefuckingtimer.svg)
