@@ -1,9 +1,11 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include <unistd.h>     // for access()
+#include <unistd.h>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
+#include <iomanip>
 #include <thread>
 #include "timer.h"
 
@@ -13,9 +15,42 @@ Timer timer;
 // Declaration for hotkeyListener.
 void hotkeyListener();
 
-// Helper function to get a default font from common Linux font paths.
+// Helper function to format elapsed time.
+std::string formatTime(double seconds) {
+    int totalSec = static_cast<int>(seconds);
+    int days = totalSec / 86400;
+    int hours = (totalSec % 86400) / 3600;
+    int minutes = (totalSec % 3600) / 60;
+    // Calculate the seconds (with fraction) that remain after extracting days, hours, and minutes.
+    double secWithFraction = seconds - (days * 86400 + hours * 3600 + minutes * 60);
+    int secInt = static_cast<int>(secWithFraction);
+    int secFrac = static_cast<int>((secWithFraction - secInt) * 100); // two decimals
+
+    std::ostringstream oss;
+    if (days > 0) {
+        oss << days << "d "
+            << std::setfill('0') << std::setw(2) << hours << ":"
+            << std::setfill('0') << std::setw(2) << minutes << ":"
+            << std::setfill('0') << std::setw(2) << secInt << "."
+            << std::setfill('0') << std::setw(2) << secFrac;
+    } else if (hours > 0) {
+        oss << hours << ":"
+            << std::setfill('0') << std::setw(2) << minutes << ":"
+            << std::setfill('0') << std::setw(2) << secInt << "."
+            << std::setfill('0') << std::setw(2) << secFrac;
+    } else if (minutes > 0) {
+        oss << minutes << ":"
+            << std::setfill('0') << std::setw(2) << secInt << "."
+            << std::setfill('0') << std::setw(2) << secFrac;
+    } else {
+        // For times less than a minute, show seconds with two decimals.
+        oss << std::fixed << std::setprecision(2) << seconds;
+    }
+    return oss.str();
+}
+
+// Common Linux font lookup.
 std::string getDefaultFontPath() {
-    // List of common font file paths on Linux.
     std::vector<std::string> possiblePaths = {
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
@@ -31,14 +66,12 @@ std::string getDefaultFontPath() {
 }
 
 void renderTimer(SDL_Renderer* renderer, TTF_Font* font, double timeValue) {
-    char timeText[64];
-    snprintf(timeText, sizeof(timeText), "%.2f", timeValue);
-    
+    std::string timeText = formatTime(timeValue);
     SDL_Color white = {255, 255, 255, 255};
-    SDL_Surface* surface = TTF_RenderText_Blended(font, timeText, white);
+    SDL_Surface* surface = TTF_RenderText_Blended(font, timeText.c_str(), white);
     if (!surface) return;
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-    
+
     int textW = 0, textH = 0;
     SDL_QueryTexture(texture, NULL, NULL, &textW, &textH);
     SDL_Rect dstRect = {100, 100, textW, textH};
@@ -77,7 +110,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Try to get a default system font.
     std::string fontPath = getDefaultFontPath();
     if (fontPath.empty()) {
         std::cerr << "No default system font found!\n";
@@ -107,7 +139,7 @@ int main(int argc, char* argv[]) {
         renderTimer(renderer, font, currentTime);
 
         SDL_RenderPresent(renderer);
-        SDL_Delay(16); // Roughly 60 FPS.
+        SDL_Delay(16);
     }
 
     hotkeyThread.detach();
