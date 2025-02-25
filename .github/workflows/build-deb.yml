@@ -1,11 +1,9 @@
-name: Build .deb Package
+name: Build and Release .deb Package
 
 on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
 
 jobs:
   build:
@@ -15,12 +13,19 @@ jobs:
     env:
       PKG_NAME: simplefuckingtimer
       PKG_RELEASE: 1
+    outputs:
+      deb_file: ${{ steps.rename.outputs.deb_file }}
+      pkg_version: ${{ steps.set_version.outputs.pkg_version }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Set Version Using Date, Hour, and Minute
-        run: echo "PKG_VERSION=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+        id: set_version
+        run: |
+          PKG_VERSION=$(date +%Y%m%d%H%M)
+          echo "PKG_VERSION=$PKG_VERSION" >> $GITHUB_ENV
+          echo "::set-output name=pkg_version::$PKG_VERSION"
 
       - name: Install Dependencies
         run: |
@@ -35,14 +40,45 @@ jobs:
           checkinstall --pkgname=$PKG_NAME --pkgversion=$PKG_VERSION --pkgrelease=$PKG_RELEASE --default --install=no
 
       - name: Rename .deb Package
+        id: rename
         run: |
           DEB_FILE=$(ls *.deb | head -n 1)
           NEW_NAME="${PKG_NAME}-${PKG_VERSION}-${PKG_RELEASE}_amd64.deb"
           mv "$DEB_FILE" "$NEW_NAME"
+          echo "::set-output name=deb_file::$NEW_NAME"
 
-      - name: Upload .deb Artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: "${{ env.PKG_NAME }}-${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_amd64.deb"
-          path: "${{ env.PKG_NAME }}-${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_amd64.deb"
+          name: deb-package
+          path: "${{ steps.rename.outputs.deb_file }}"
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: deb-package
+          path: .
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.build.outputs.pkg_version }}
+          release_name: Release ${{ needs.build.outputs.pkg_version }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: "${{ needs.build.outputs.deb_file }}"
+          asset_name: "${{ needs.build.outputs.deb_file }}"
+          asset_content_type: application/vnd.debian.binary-package
 
