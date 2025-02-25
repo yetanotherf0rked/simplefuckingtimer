@@ -16,3 +16,12 @@ build/
 .vscode/
 .idea/
 
+# Ignore build artifacts and packages
+*.deb
+
+# Ignore backup files
+backup-*.tgz
+
+# Ignore directories that contain generated documentation or packaging
+description-pak
+doc-pak/

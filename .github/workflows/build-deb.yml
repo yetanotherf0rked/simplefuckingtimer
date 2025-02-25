@@ -1,0 +1,42 @@
+name: Build .deb Package
+
+on:
+  push:
+    branches:
+      - main 
+  tags:
+    - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      PKG_NAME: simplefuckingtimer
+      PKG_RELEASE: 1
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Version Using Date, Hour, and Minute
+        run: echo "PKG_VERSION=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential libsdl2-dev libsdl2-ttf-dev libx11-dev checkinstall
+
+      - name: Build the Application
+        run: make
+
+      - name: Build Debian Package with checkinstall
+        run: |
+          sudo checkinstall --pkgname=$PKG_NAME --pkgversion=$PKG_VERSION --pkgrelease=$PKG_RELEASE --default --install=no
+
+      - name: Upload .deb Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: deb-package
+          path: '*.deb'
+
