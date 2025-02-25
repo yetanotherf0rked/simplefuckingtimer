@@ -1,0 +1,18 @@
+# Ignore compiled object files and the final binary
+*.o
+simplefuckingtimer
+
+# Ignore temporary and backup files
+*~
+*.tmp
+
+# Ignore build directories if any
+build/
+
+# Ignore system-specific files
+.DS_Store
+
+# IDE specific directories (optional)
+.vscode/
+.idea/
+
