@@ -18,9 +18,12 @@ void hotkeyListener() {
 
     KeyCode insertKey = XKeysymToKeycode(display, XK_Insert);
     KeyCode pauseKey  = XKeysymToKeycode(display, XK_Pause);
+    KeyCode homeKey   = XKeysymToKeycode(display, XK_Home); // New HOME key
 
+    // Grab keys on the root window.
     XGrabKey(display, insertKey, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
     XGrabKey(display, pauseKey, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
+    XGrabKey(display, homeKey, AnyModifier, root, True, GrabModeAsync, GrabModeAsync);
     XSelectInput(display, root, KeyPressMask);
 
     XEvent event;
@@ -43,6 +46,12 @@ void hotkeyListener() {
                     timer.pause();
                 } else if (state == PAUSED) {
                     timer.resume();
+                }
+            } else if (xkey.keycode == homeKey) {
+                // New: If the run is finished, revert it (resume).
+                TimerState state = timer.getState();
+                if (state == FINISHED) {
+                    timer.revertFinish();
                 }
             }
         }

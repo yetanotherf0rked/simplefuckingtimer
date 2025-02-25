@@ -14,6 +14,7 @@ public:
     void reset();
     void pause();
     void resume();
+    void revertFinish(); // New: Allows undoing a finished run
     double getTime();
     TimerState getState();
     
