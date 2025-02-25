@@ -84,14 +84,27 @@ void renderTimer(SDL_Renderer* renderer, TTF_Font* font, double timeValue) {
         return;
     }
     
+    // Choose text color based on timer state.
+    SDL_Color textColor;
+    TimerState state = timer.getState();
+    if (state == STOPPED) {
+        textColor = {211, 211, 211, 255}; // very light grey
+    } else if (state == RUNNING) {
+        textColor = {0, 255, 0, 255};     // bright green
+    } else if (state == PAUSED) {
+        textColor = {128, 128, 128, 255}; // mid grey
+    } else if (state == FINISHED) {
+        textColor = {0, 191, 255, 255};   // deep sky blue
+    } else {
+       textColor = {255, 255, 255, 255}; // fallback: white
+    }
+ 
     // Compute the destination rectangle so that text is right-aligned.
-    // The text's right edge will be at overlayWidth - horizontalMargin.
     int dstX = overlayWidth - horizontalMargin - textW;
-    int dstY = (overlayHeight - textH) / 2; // vertically centered
+    int dstY = (overlayHeight - textH) / 2;
     SDL_Rect dstRect = { dstX, dstY, textW, textH };
 
-    SDL_Color white = {255, 255, 255, 255};
-    SDL_Surface* surface = TTF_RenderText_Blended(font, timeText.c_str(), white);
+    SDL_Surface* surface = TTF_RenderText_Blended(font, timeText.c_str(), textColor);
     if (!surface) return;
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
@@ -100,6 +113,7 @@ void renderTimer(SDL_Renderer* renderer, TTF_Font* font, double timeValue) {
     SDL_DestroyTexture(texture);
     SDL_FreeSurface(surface);
 }
+
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
