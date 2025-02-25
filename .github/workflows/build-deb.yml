@@ -14,8 +14,8 @@ jobs:
       PKG_NAME: simplefuckingtimer
       PKG_RELEASE: 1
     outputs:
-      deb_file: ${{ steps.rename.outputs.deb_file }}
       pkg_version: ${{ steps.set_version.outputs.pkg_version }}
+      deb_file: ${{ steps.rename.outputs.deb_file }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -25,7 +25,7 @@ jobs:
         run: |
           PKG_VERSION=$(date +%Y%m%d%H%M)
           echo "PKG_VERSION=$PKG_VERSION" >> $GITHUB_ENV
-          echo "::set-output name=pkg_version::$PKG_VERSION"
+          echo "pkg_version=$PKG_VERSION" >> $GITHUB_OUTPUT
 
       - name: Install Dependencies
         run: |
@@ -45,22 +45,22 @@ jobs:
           DEB_FILE=$(ls *.deb | head -n 1)
           NEW_NAME="${PKG_NAME}-${PKG_VERSION}-${PKG_RELEASE}_amd64.deb"
           mv "$DEB_FILE" "$NEW_NAME"
-          echo "::set-output name=deb_file::$NEW_NAME"
+          echo "deb_file=$NEW_NAME" >> $GITHUB_OUTPUT
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: deb-package
-          path: "${{ steps.rename.outputs.deb_file }}"
+          name: "${{ env.PKG_NAME }}-${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_amd64.deb"
+          path: "${{ env.PKG_NAME }}-${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_amd64.deb"
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: deb-package
+          name: "${{ needs.build.outputs.deb_file }}"
           path: .
       - name: Create GitHub Release
         id: create_release
