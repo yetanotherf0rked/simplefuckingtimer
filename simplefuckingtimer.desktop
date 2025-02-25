@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Simple Fucking Timer
+Comment=A minimal overlay timer for speedrunning with global hotkeys on Linux.
+Exec=/usr/local/bin/simplefuckingtimer
+Icon=sft-logo-256
+Terminal=false
+Type=Application
+Categories=Utility;
+

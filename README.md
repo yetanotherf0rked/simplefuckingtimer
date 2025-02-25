@@ -3,19 +3,42 @@
 A minimal overlay timer for speedrunning with global hotkeys on Linux.
 
 ## Features
-- Overlay display over all windows.
-- Global hotkeys for start/split/reset and pause/unpause.
-- Designed for Linux (Debian-based systems initially).
+- **Overlay Display:** Overlays the timer over all windows.
+- **Global Hotkeys:** Use keys for start/split/reset and pause/unpause.
+- **Platform:** Designed primarily for Linux (initially Debian-based systems).
 
-## How to Use
-- INSERT: Start, Stop and Reset. First press starts the timer, seconds press stops it and show your time, third press resets the timer.
-- PAUSE: Pause and Resume.
+## Usage
+- **INSERT:** Start, Stop, and Reset.
+  - First press: Starts the timer.
+  - Second press: Stops it and displays your time.
+  - Third press: Resets the timer.
+- **PAUSE:** Pause and Resume the timer.
+- **HOME:** Undo Split.
 
-## Build and Run
-\`\`\`bash
-make
-./simplefuckingtimer
-\`\`\`
+## Install from Build
+   Install necessary packages
+   ~~~bash
+   sudo apt update
+   sudo apt install build-essential libsdl2-dev libsdl2-ttf-dev libx11-dev
+   ~~~
 
-## License
-MIT
+   Build then install
+   ~~~bash
+   make
+   sudo make install
+   ~~~
+
+## Running the Application
+- **From the Command Line:**  
+  Run:
+  ~~~bash
+  simplefuckingtimer
+  ~~~
+- **From the Desktop Environment:**  
+  Look for "Simple Fucking Timer" in your application menu.
+
+## Uninstalling the Application
+To remove the application, run:
+~~~bash
+sudo make uninstall
+~~~
