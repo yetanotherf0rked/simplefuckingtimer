@@ -35,7 +35,7 @@ jobs:
           sudo checkinstall --pkgname=$PKG_NAME --pkgversion=$PKG_VERSION --pkgrelease=$PKG_RELEASE --default --install=no
 
       - name: Upload .deb Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deb-package
           path: '*.deb'
