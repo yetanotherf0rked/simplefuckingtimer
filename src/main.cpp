@@ -21,7 +21,6 @@ std::string formatTime(double seconds) {
     int days = totalSec / 86400;
     int hours = (totalSec % 86400) / 3600;
     int minutes = (totalSec % 3600) / 60;
-    // Calculate the seconds (with fraction) that remain after extracting days, hours, and minutes.
     double secWithFraction = seconds - (days * 86400 + hours * 3600 + minutes * 60);
     int secInt = static_cast<int>(secWithFraction);
     int secFrac = static_cast<int>((secWithFraction - secInt) * 100); // two decimals
@@ -43,13 +42,12 @@ std::string formatTime(double seconds) {
             << std::setfill('0') << std::setw(2) << secInt << "."
             << std::setfill('0') << std::setw(2) << secFrac;
     } else {
-        // For times less than a minute, show seconds with two decimals.
         oss << std::fixed << std::setprecision(2) << seconds;
     }
     return oss.str();
 }
 
-// Common Linux font lookup.
+// Helper function to search for a system default font.
 std::string getDefaultFontPath() {
     std::vector<std::string> possiblePaths = {
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
@@ -122,14 +120,41 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Launch the hotkey listener in a separate thread.
     std::thread hotkeyThread(hotkeyListener);
+
+    // Variables for dragging the window.
+    bool dragging = false;
+    int dragOffsetX = 0, dragOffsetY = 0;
 
     bool quit = false;
     SDL_Event e;
     while (!quit) {
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
-                quit = true;
+            switch (e.type) {
+                case SDL_QUIT:
+                    quit = true;
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                    if (e.button.button == SDL_BUTTON_LEFT) {
+                        // Start dragging: record the offset of the click within the window.
+                        dragging = true;
+                        dragOffsetX = e.button.x;
+                        dragOffsetY = e.button.y;
+                    }
+                    break;
+                case SDL_MOUSEBUTTONUP:
+                    if (e.button.button == SDL_BUTTON_LEFT) {
+                        dragging = false;
+                    }
+                    break;
+                case SDL_MOUSEMOTION:
+                    if (dragging) {
+                        int globalX, globalY;
+                        SDL_GetGlobalMouseState(&globalX, &globalY);
+                        SDL_SetWindowPosition(window, globalX - dragOffsetX, globalY - dragOffsetY);
+                    }
+                    break;
             }
         }
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
@@ -139,7 +164,7 @@ int main(int argc, char* argv[]) {
         renderTimer(renderer, font, currentTime);
 
         SDL_RenderPresent(renderer);
-        SDL_Delay(16);
+        SDL_Delay(16); // Approximately 60 FPS.
     }
 
     hotkeyThread.detach();
