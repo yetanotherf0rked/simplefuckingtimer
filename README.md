@@ -68,3 +68,7 @@ To remove the application, run:
 sudo make uninstall
 ~~~
 
+## Future Improvements
+- fix the 100 days cap
+- possibility to change the key bindings
+- AppImage build
