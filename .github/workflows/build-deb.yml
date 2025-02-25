@@ -53,8 +53,8 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: package
-          path: "${{ env.PKG_NAME }}-${{ env.PKG_VERSION }}-${{ env.PKG_RELEASE }}_amd64.deb"
+          name: "${{ steps.rename.outputs.deb_file }}"
+          path: "${{ steps.rename.outputs.deb_file }}"
 
   release:
     needs: build
@@ -65,11 +65,11 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
-          name: package
+          name: "${{ needs.build.outputs.deb_file }}"
           path: .
       - name: Create GitHub Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: actions/create-release@v1.2.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
