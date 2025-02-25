@@ -28,9 +28,12 @@ void Timer::pause() {
     std::lock_guard<std::mutex> lock(mtx);
     if (state == RUNNING) {
         pausedTime = std::chrono::steady_clock::now();
+        // Capture the elapsed time at pause
+        elapsed = pausedTime - startTime;
         state = PAUSED;
     }
 }
+
 
 void Timer::resume() {
     std::lock_guard<std::mutex> lock(mtx);
